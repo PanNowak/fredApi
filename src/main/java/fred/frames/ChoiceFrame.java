@@ -1,5 +1,6 @@
 package fred.frames;
 
+import excel.ExcelWriter;
 import fred.enumeration.SeriesEnum;
 import fred.data.Series;
 import fred.gbc.GBC;
@@ -7,10 +8,13 @@ import fred.network.FredConnection;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -34,6 +38,8 @@ public class ChoiceFrame extends JFrame {
     private TableFrame tableFrame;
     private JButton tableButton;
 
+    private JButton excelButton;
+
     private FredWorker worker;
     private JPanel seriesPanel;
     private JProgressBar progressBar;
@@ -46,8 +52,7 @@ public class ChoiceFrame extends JFrame {
             }
         };
 
-        try
-        {
+        try {
             UIManager.setLookAndFeel(new MetalLookAndFeel());
             SwingUtilities.updateComponentTreeUI(this);
         } catch (Exception e) { e.printStackTrace(); }
@@ -61,10 +66,6 @@ public class ChoiceFrame extends JFrame {
         pack();
     }
 
-    /**
-     * Convenience method that creates series panel.
-     * @return series panel
-     */
     private JPanel createSeriesPanel() {
         seriesCombo = createSeriesCombo();
         seriesButton = createSeriesButton();
@@ -113,6 +114,9 @@ public class ChoiceFrame extends JFrame {
             if (seriesMap.containsKey(se)) {
                 seriesButton.setEnabled(false);
                 seriesButton.setText("Downloaded");
+
+                excelButton.setEnabled(true);
+
                 chartButton.setEnabled(true);
                 tableButton.setEnabled(true);
 
@@ -124,6 +128,9 @@ public class ChoiceFrame extends JFrame {
                 seriesButton.setText("Download series");
                 startingDateCombo.setEnabled(false);
                 endingDateCombo.setEnabled(false);
+
+                excelButton.setEnabled(false);
+
                 chartButton.setEnabled(false);
                 tableButton.setEnabled(false);
             }
@@ -159,10 +166,6 @@ public class ChoiceFrame extends JFrame {
         return seriesButton;
     }
 
-    /**
-     * Convenience method that creates date panel.
-     * @return date panel
-     */
     private JPanel createDatePanel() {
         JPanel datePanel = new JPanel(new GridBagLayout());
 
@@ -230,6 +233,25 @@ public class ChoiceFrame extends JFrame {
     private JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel(new GridBagLayout());
 
+        //TODO add actionlistener to excelButton
+        excelButton = new JButton("Create report");
+        excelButton.setEnabled(false);
+        excelButton.addActionListener(event -> {
+            JFileChooser chooser = new JFileChooser();
+
+            int state = chooser.showSaveDialog(this);
+            if (state == JFileChooser.APPROVE_OPTION) {
+                File file = chooser.getSelectedFile();
+                String path = file.getAbsolutePath() + ".xlsx";
+
+                createExcelReport(path);
+            }
+        });
+
+        buttonPanel.add(excelButton, new GBC(0, 0).setInsets(2)
+                .setWeight(100, 0).setFill(GBC.BOTH));
+
+
         tableButton = new JButton("Show table");
         tableButton.setEnabled(false);
         tableButton.addActionListener(event -> {
@@ -239,7 +261,7 @@ public class ChoiceFrame extends JFrame {
             else tableFrame.setVisible(false);
         });
 
-        buttonPanel.add(tableButton, new GBC(0, 0).setInsets(2)
+        buttonPanel.add(tableButton, new GBC(1, 0).setInsets(2)
                 .setWeight(100, 0).setFill(GBC.BOTH));
 
         chartButton = new JButton("Show chart");
@@ -251,10 +273,24 @@ public class ChoiceFrame extends JFrame {
             else chartFrame.setVisible(false);
         });
 
-        buttonPanel.add(chartButton, new GBC(1, 0).setInsets(2)
+        buttonPanel.add(chartButton, new GBC(2, 0).setInsets(2)
                 .setWeight(100, 0).setFill(GBC.BOTH));
 
         return buttonPanel;
+    }
+
+    private void createExcelReport(String path) {
+        Series series = seriesMap.get(getSelectedItem(seriesCombo));
+        LocalDate start = getSelectedItem(startingDateCombo);
+        LocalDate end = getSelectedItem(endingDateCombo);
+
+        try {
+            new ExcelWriter(series.getHeader().getTitle(), start,
+                    end, series.getObservationList(start, end))
+                    .writeToExcel(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private ChartFrame createChartFrame() {
@@ -303,6 +339,26 @@ public class ChoiceFrame extends JFrame {
         dateCombo.setEnabled(true);
     }
 
+    private boolean isDateChoiceValid(JComboBox<LocalDate> beforeCombo,
+                                      JComboBox<LocalDate> afterCombo) {
+        LocalDate beforeDate = getSelectedItem(beforeCombo);
+        LocalDate afterDate = getSelectedItem(afterCombo);
+
+        if (beforeDate == null || afterDate == null) return true;
+
+        if (beforeDate.compareTo(afterDate) > 0) {
+            beforeCombo.hidePopup();
+            afterCombo.hidePopup();
+
+            JOptionPane.showMessageDialog(this,
+                    "Starting date may not be after ending date", "",
+                    JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        return true;
+    }
+
     private GridBagConstraints getDateGBC(int gridx) {
         return new GBC(gridx, 0).setFill(GBC.BOTH)
                 .setWeight(100, 0).setInsets(5);
@@ -334,6 +390,9 @@ public class ChoiceFrame extends JFrame {
                 prepareDateCombo(endingDateCombo);
 
                 seriesButton.setText("Downloaded");
+
+                excelButton.setEnabled(true);
+
                 chartButton.setEnabled(true);
                 tableButton.setEnabled(true);
             } catch (ExecutionException | InterruptedException e) {
@@ -359,25 +418,5 @@ public class ChoiceFrame extends JFrame {
             frame.setResizable(false);
             frame.setVisible(true);
         });
-    }
-
-    private boolean isDateChoiceValid(JComboBox<LocalDate> beforeCombo,
-                                    JComboBox<LocalDate> afterCombo) {
-        LocalDate beforeDate = getSelectedItem(beforeCombo);
-        LocalDate afterDate = getSelectedItem(afterCombo);
-
-        if (beforeDate == null || afterDate == null) return true;
-
-        if (beforeDate.compareTo(afterDate) > 0) {
-            beforeCombo.hidePopup();
-            afterCombo.hidePopup();
-
-            JOptionPane.showMessageDialog(this,
-                    "Starting date may not be after ending date", "",
-                    JOptionPane.WARNING_MESSAGE);
-            return false;
-        }
-
-        return true;
     }
 }

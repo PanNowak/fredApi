@@ -139,7 +139,7 @@ public class FredConnection {
      */
     private static String getApiKey() {
         String apiKey;
-        InputStream stream = FredConnection.class.getResourceAsStream("Key.txt");
+        InputStream stream = FredConnection.class.getResourceAsStream("/Key.txt");
         try (Scanner fileScanner = new Scanner(stream, "UTF-8")) {
             apiKey = fileScanner.nextLine();
         }
