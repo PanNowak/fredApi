@@ -91,8 +91,8 @@ public class ChoiceFrame extends JFrame {
     }
 
     private JComboBox<SeriesEnum> createSeriesCombo() {
-        JComboBox<SeriesEnum> comboBox = new JComboBox<>(SeriesEnum.values());
-        comboBox.setRenderer(new DefaultListCellRenderer() {
+        JComboBox<SeriesEnum> seriesCombo = new JComboBox<>(SeriesEnum.values());
+        seriesCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value,
                                                           int index, boolean isSelected, boolean cellHasFocus) {
@@ -105,7 +105,7 @@ public class ChoiceFrame extends JFrame {
         });
 
         //Adding listeners to SeriesEnums combobox
-        comboBox.addActionListener(event -> {
+        seriesCombo.addActionListener(event -> {
             if (chartFrame != null) {
                 chartFrame.setVisible(false);
                 chartFrame = null;
@@ -119,7 +119,7 @@ public class ChoiceFrame extends JFrame {
             startingDateCombo.removeAllItems();
             endingDateCombo.removeAllItems();
 
-            SeriesEnum se = getSelectedItem(comboBox);
+            SeriesEnum se = getSelectedItem(seriesCombo);
 
             if (seriesMap.containsKey(se)) {
                 seriesButton.setEnabled(false);
@@ -129,11 +129,11 @@ public class ChoiceFrame extends JFrame {
                 chartButton.setEnabled(true);
                 tableButton.setEnabled(true);
 
-                prepareDateCombo(startingDateCombo);
-                prepareDateCombo(endingDateCombo);
+                prepareDateCombo(startingDateCombo, false);
+                prepareDateCombo(endingDateCombo, true);
             } else {
                 seriesButton.setEnabled(
-                        seriesCombo.getSelectedIndex() != 0);
+                        this.seriesCombo.getSelectedIndex() != 0);
                 seriesButton.setText("Download series");
                 startingDateCombo.setEnabled(false);
                 endingDateCombo.setEnabled(false);
@@ -144,7 +144,7 @@ public class ChoiceFrame extends JFrame {
             }
         });
 
-        return comboBox;
+        return seriesCombo;
     }
 
     private JButton createSeriesButton() {
@@ -343,12 +343,15 @@ public class ChoiceFrame extends JFrame {
         return tableFrame;
     }
 
-    private void prepareDateCombo(JComboBox<LocalDate> dateCombo) {
+    private void prepareDateCombo(JComboBox<LocalDate> dateCombo, boolean isEndCombo) {
         SeriesEnum se = getSelectedItem(seriesCombo);
         List<LocalDate> dateList = seriesMap.get(se).getDateList();
 
         for (LocalDate localDate : dateList)
             dateCombo.addItem(localDate);
+
+        if (isEndCombo)
+            dateCombo.setSelectedIndex(dateCombo.getModel().getSize() - 1);
 
         dateCombo.setEnabled(true);
     }
@@ -400,8 +403,8 @@ public class ChoiceFrame extends JFrame {
             try {
                 seriesMap.put(se, get());
 
-                prepareDateCombo(startingDateCombo);
-                prepareDateCombo(endingDateCombo);
+                prepareDateCombo(startingDateCombo, false);
+                prepareDateCombo(endingDateCombo, true);
 
                 seriesButton.setText("Downloaded");
 

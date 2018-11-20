@@ -6,7 +6,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.charts.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
-import org.apache.poi.xssf.usermodel.charts.XSSFChartLegend;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -22,6 +21,8 @@ public class ExcelWriter {
     private Series series;
     private LocalDate startDate;
     private LocalDate endDate;
+
+    private int rowNum = 3;
 
     public ExcelWriter(Series series, LocalDate startDate, LocalDate endDate) {
         this.series = series;
@@ -43,7 +44,7 @@ public class ExcelWriter {
 
         try (FileOutputStream out = new FileOutputStream(path);
              Workbook workbook = new XSSFWorkbook()) {
-            Sheet analysisSheet = workbook.createSheet("Analysis");
+            Sheet sheet = workbook.createSheet("Analysis");
 
             String title = series.getHeader().getTitle();
 
@@ -52,10 +53,11 @@ public class ExcelWriter {
             String start = formatter.format(startDate);
             String end = formatter.format(endDate);
 
-            setTitleCell(workbook, analysisSheet, title, BOLD, 0);
-            setTitleCell(workbook, analysisSheet, start + " - " + end, ITALIC, 1);
+            setTitleCell(workbook, sheet, title, BOLD, 0);
+            setTitleCell(workbook, sheet, start + " - " + end, ITALIC, 1);
 
-            setTableCells(workbook, analysisSheet);
+            setTableCells(workbook, sheet);
+            createChart(sheet);
 
             workbook.write(out);
         }
@@ -73,8 +75,6 @@ public class ExcelWriter {
     }
 
     private void setTableCells(Workbook workbook, Sheet sheet) {
-        int rowNum = 3;
-
         CellStyle headerCellStyle = workbook.createCellStyle();
         headerCellStyle.setFont(createFont(workbook, 10, PLAIN));
         headerCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
@@ -85,8 +85,7 @@ public class ExcelWriter {
         setHeaderCell(sheet, headerRow, 0, "Date", headerCellStyle);
         setHeaderCell(sheet, headerRow, 1, "Value", headerCellStyle);
 
-        rowNum = setDataCells(workbook, sheet, rowNum);
-        createChart(sheet, rowNum);
+        setDataCells(workbook, sheet);
     }
 
     private void setHeaderCell(Sheet sheet, Row row, int colNum,
@@ -106,7 +105,7 @@ public class ExcelWriter {
         return dataCellStyle;
     }
 
-    private int setDataCells(Workbook workbook, Sheet sheet, int rowNum) {
+    private void setDataCells(Workbook workbook, Sheet sheet) {
         CellStyle dateCellStyle = createDataCellStyle(workbook, "");
         DateTimeFormatter dateFormatter =
                 DateTimeFormatter.ofPattern("M/d/uuuu");
@@ -125,11 +124,9 @@ public class ExcelWriter {
             valueCell.setCellValue(observation.getValue().doubleValue());
             valueCell.setCellStyle(valueCellStyle);
         }
-
-        return rowNum - 1;
     }
 
-    private void createChart(Sheet sheet, int lastRow) {
+    private void createChart(Sheet sheet) {
         XSSFSheet chartSheet = (XSSFSheet) sheet;
         XSSFDrawing drawing = chartSheet.createDrawingPatriarch();
         XSSFClientAnchor anchor = drawing.createAnchor(0, 0, 0, 0,
@@ -144,9 +141,9 @@ public class ExcelWriter {
         leftAxis.setMajorTickMark(AxisTickMark.NONE);
 
         ChartDataSource<Number> xAxisData = DataSources.fromNumericCellRange(
-                chartSheet, new CellRangeAddress(4, lastRow - 1, 0, 0));
+                chartSheet, new CellRangeAddress(4, rowNum - 1, 0, 0));
         ChartDataSource<Number> yAxisData = DataSources.fromNumericCellRange(
-                chartSheet, new CellRangeAddress(4, lastRow - 1, 1, 1));
+                chartSheet, new CellRangeAddress(4, rowNum - 1, 1, 1));
         data.addSeries(xAxisData, yAxisData);
         lineChart.plot(data, bottomAxis, leftAxis);
     }
