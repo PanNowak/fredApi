@@ -9,6 +9,8 @@ import fred.network.FredConnection;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.filechooser.FileSystemView;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import java.awt.*;
 import java.awt.event.ItemEvent;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class ChoiceFrame extends JFrame {
@@ -39,6 +42,8 @@ public class ChoiceFrame extends JFrame {
     private JButton tableButton;
 
     private JButton excelButton;
+    private JFileChooser fileChooser;
+    private ExcelWriter excelWriter;
 
     private FredWorker worker;
     private JPanel seriesPanel;
@@ -51,6 +56,10 @@ public class ChoiceFrame extends JFrame {
                 return size() > MAX_MAP_SIZE;
             }
         };
+        File desktop = FileSystemView.getFileSystemView().getHomeDirectory();
+        fileChooser = new JFileChooser(desktop);
+        fileChooser.setFileFilter(new FileNameExtensionFilter(
+                "Excel files", ".xlsx"));
 
         try {
             UIManager.setLookAndFeel(new MetalLookAndFeel());
@@ -105,6 +114,7 @@ public class ChoiceFrame extends JFrame {
                 tableFrame.setVisible(false);
                 tableFrame = null;
             }
+            excelWriter = null;
 
             startingDateCombo.removeAllItems();
             endingDateCombo.removeAllItems();
@@ -116,7 +126,6 @@ public class ChoiceFrame extends JFrame {
                 seriesButton.setText("Downloaded");
 
                 excelButton.setEnabled(true);
-
                 chartButton.setEnabled(true);
                 tableButton.setEnabled(true);
 
@@ -130,7 +139,6 @@ public class ChoiceFrame extends JFrame {
                 endingDateCombo.setEnabled(false);
 
                 excelButton.setEnabled(false);
-
                 chartButton.setEnabled(false);
                 tableButton.setEnabled(false);
             }
@@ -233,24 +241,16 @@ public class ChoiceFrame extends JFrame {
     private JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel(new GridBagLayout());
 
-        //TODO add actionlistener to excelButton
         excelButton = new JButton("Create report");
         excelButton.setEnabled(false);
         excelButton.addActionListener(event -> {
-            JFileChooser chooser = new JFileChooser();
-
-            int state = chooser.showSaveDialog(this);
-            if (state == JFileChooser.APPROVE_OPTION) {
-                File file = chooser.getSelectedFile();
-                String path = file.getAbsolutePath() + ".xlsx";
-
-                createExcelReport(path);
-            }
+            int state = fileChooser.showSaveDialog(this);
+            if (state == JFileChooser.APPROVE_OPTION)
+                createExcelReport(fileChooser.getSelectedFile());
         });
 
         buttonPanel.add(excelButton, new GBC(0, 0).setInsets(2)
                 .setWeight(100, 0).setFill(GBC.BOTH));
-
 
         tableButton = new JButton("Show table");
         tableButton.setEnabled(false);
@@ -279,18 +279,32 @@ public class ChoiceFrame extends JFrame {
         return buttonPanel;
     }
 
-    private void createExcelReport(String path) {
+    private void createExcelReport(File file) {
         Series series = seriesMap.get(getSelectedItem(seriesCombo));
         LocalDate start = getSelectedItem(startingDateCombo);
         LocalDate end = getSelectedItem(endingDateCombo);
 
-        try {
-            new ExcelWriter(series.getHeader().getTitle(), start,
-                    end, series.getObservationList(start, end))
-                    .writeToExcel(path);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (excelWriter == null) {
+            excelWriter = new ExcelWriter(series, start, end);
+        } else {
+            excelWriter.setStartDate(start);
+            excelWriter.setEndDate(end);
         }
+
+        excelButton.setEnabled(false);
+
+        new Thread(() -> {
+            try {
+                excelWriter.writeToExcel(file);
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, e.getMessage(),
+                        "IO error", JOptionPane.ERROR_MESSAGE);
+
+                e.printStackTrace();
+            } finally {
+                EventQueue.invokeLater(() -> excelButton.setEnabled(true));
+            }
+        }).start();
     }
 
     private ChartFrame createChartFrame() {
