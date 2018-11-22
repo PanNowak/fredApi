@@ -40,22 +40,25 @@ public class Series {
     }
 
     /**
-     * Returns list of observations dated from start date to end date (inclusive).
-     * @param start starting date (inclusive)
-     * @param end ending date (inclusive)
+     * Returns list of observations dated from first date to last date (inclusive).
+     * Observations must be sorted in ascending order, i.e., from earliest to most recent.
+     * @param firstDate starting date (inclusive)
+     * @param lastDate ending date (inclusive)
      * @return list of {@code Observation} objects
      */
-    public List<Observation> getObservationList(LocalDate start, LocalDate end) {
-        List<Observation> middleObservations = new ArrayList<>();
-        for (Observation o : observationList) {
-            if (o.getDate().compareTo(start) >= 0)
-                middleObservations.add(o);
+    public List<Observation> getObservationList(LocalDate firstDate, LocalDate lastDate) {
+        List<Observation> observationsBetween = new ArrayList<>();
+        for (Observation observation : observationList) {
+            LocalDate dateOfObservation = observation.getDate();
 
-            if (o.getDate().compareTo(end) >= 0)
+            if (dateOfObservation.compareTo(firstDate) >= 0)
+                observationsBetween.add(observation);
+
+            if (dateOfObservation.compareTo(lastDate) >= 0)
                 break;
         }
 
-        return middleObservations;
+        return observationsBetween;
     }
 
 

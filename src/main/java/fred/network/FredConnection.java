@@ -85,18 +85,22 @@ public class FredConnection {
         List<Observation> observationList = new ArrayList<>();
         JsonArray jsonObs = downloadData(spec, "observations");
 
-        for (JsonElement element : jsonObs) {
-            if (element.isJsonObject()) {
-                JsonObject object = element.getAsJsonObject();
-
-                LocalDate date = G.fromJson(object.get("date"), LocalDate.class);
-                BigDecimal value = G.fromJson(object.get("value"), BigDecimal.class);
-
-                if (value != null) observationList.add(new Observation(date, value));
-            }
-        }
+        for (JsonElement element : jsonObs)
+            addDataToObservationList(observationList, element);
 
         return observationList;
+    }
+
+    private static void addDataToObservationList(List<Observation> observationList,
+                                          JsonElement dataSourceElement) {
+        if (dataSourceElement.isJsonObject()) {
+            JsonObject object = dataSourceElement.getAsJsonObject();
+
+            LocalDate date = G.fromJson(object.get("date"), LocalDate.class);
+            BigDecimal value = G.fromJson(object.get("value"), BigDecimal.class);
+
+            if (value != null) observationList.add(new Observation(date, value));
+        }
     }
 
     /**
@@ -108,18 +112,20 @@ public class FredConnection {
      */
     private static JsonArray downloadData(String spec, String memberName) throws IOException {
         URLConnection connection = new URL(spec).openConnection();
-        JsonArray array;
 
         try (Scanner in = new Scanner(connection.getInputStream())) {
-            StringBuilder sb = new StringBuilder();
-            while (in.hasNextLine())
-                sb.append(in.nextLine());
-
-            array = new JsonParser().parse(sb.toString())
-                    .getAsJsonObject().get(memberName).getAsJsonArray();
+            return streamToJsonArray(in, memberName);
         }
+    }
 
-        return array;
+    private static JsonArray streamToJsonArray(Scanner input, String memberName) {
+        StringBuilder builder = new StringBuilder();
+        while (input.hasNextLine())
+            builder.append(input.nextLine());
+
+        String stringToParse = builder.toString();
+        return new JsonParser().parse(stringToParse).getAsJsonObject()
+                .get(memberName).getAsJsonArray();
     }
 
     /**

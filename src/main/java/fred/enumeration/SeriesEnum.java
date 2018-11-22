@@ -21,7 +21,6 @@ public enum SeriesEnum {
         this.id = id;
     }
 
-
     public String getLabel() {
         return label;
     }

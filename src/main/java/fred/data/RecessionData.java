@@ -9,35 +9,24 @@ import java.util.Objects;
  * in the United States.
  */
 public class RecessionData {
-    private List<Series> recessionList;
-    private List<XYListContainer> containerList;
+    private List<XYAxesValues> axesValuesList;
 
     /**
      * Creates new {@code RecessionData} object.
-     * @param recessionList list of {@code Series}
+     * @param listOfRecessionSeries list of {@code Series}
      *        objects in which one series contains
      *        data about one U.S recession
      */
-    public RecessionData(List<Series> recessionList) {
-        this.recessionList = recessionList;
-        containerList = createRecessionContainerList();
-    }
-
-    /**
-     * Returns list of {@code Series} objects in which
-     * one series contains data about one U.S recession.
-     * @return list of recessions
-     */
-    public List<Series> getRecessionList() {
-        return recessionList;
+    public RecessionData(List<Series> listOfRecessionSeries) {
+        axesValuesList = createAxesValuesList(listOfRecessionSeries);
     }
 
     /**
      * Returns list of {@code XYContainer} objects.
      * @return list of XYContainers
      */
-    public List<XYListContainer> getContainerList() {
-        return containerList;
+    public List<XYAxesValues> getAxesValuesList() {
+        return axesValuesList;
     }
 
     @Override
@@ -45,42 +34,42 @@ public class RecessionData {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RecessionData that = (RecessionData) o;
-        return Objects.equals(recessionList, that.recessionList) &&
-                Objects.equals(containerList, that.containerList);
+        return Objects.equals(axesValuesList, that.axesValuesList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recessionList, containerList);
+        return Objects.hash(axesValuesList);
     }
 
     @Override
     public String toString() {
         return "RecessionData{" +
-                "recessionList=" + recessionList +
-                ", containerList=" + containerList +
+                "axesValuesList=" + axesValuesList +
                 '}';
     }
 
-    private List<XYListContainer> createRecessionContainerList() {
-        List<XYListContainer> containerList = new ArrayList<>();
+    private List<XYAxesValues> createAxesValuesList(List<Series> listOfRecessionSeries) {
+        List<XYAxesValues> axesValuesList = new ArrayList<>();
 
-        for (Series r : recessionList) {
-            List<Observation> rObservationList = r.getObservationList();
+        for (Series recession : listOfRecessionSeries) {
+            List<Observation> listOfRecessionObservations = recession.getObservationList();
             List<Double> xValues = new ArrayList<>();
-            List<Double> y1Values = new ArrayList<>();
-            List<Double> y2Values = new ArrayList<>();
+            List<Double> topYValues = new ArrayList<>();
+            List<Double> bottomYValues = new ArrayList<>();
 
-            for (Observation obs : rObservationList) {
+            for (Observation obs : listOfRecessionObservations) {
                 xValues.add((double) obs.getxMarker());
-                y1Values.add(1_000_000_000_000d);
-                y2Values.add(-1_000_000_000_000d);
+                //adding very large and very small values
+                //so that gray strip covers all visible vertical area
+                topYValues.add(1_000_000_000_000d);
+                bottomYValues.add(-1_000_000_000_000d);
             }
 
-            containerList.add(new XYListContainer(xValues, y1Values));
-            containerList.add(new XYListContainer(xValues, y2Values));
+            axesValuesList.add(new XYAxesValues(xValues, topYValues));
+            axesValuesList.add(new XYAxesValues(xValues, bottomYValues));
         }
 
-        return containerList;
+        return axesValuesList;
     }
 }

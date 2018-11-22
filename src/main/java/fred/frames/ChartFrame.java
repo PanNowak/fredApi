@@ -3,7 +3,7 @@ package fred.frames;
 import fred.data.Header;
 import fred.data.Observation;
 import fred.data.Series;
-import fred.data.XYListContainer;
+import fred.data.XYAxesValues;
 import org.knowm.xchart.XChartPanel;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
@@ -99,8 +99,8 @@ public class ChartFrame extends JFrame {
         Color g = Color.LIGHT_GRAY;
         Color gray = new Color(g.getRed(), g.getGreen(), g.getBlue(), 100);
 
-        List<XYListContainer> containerList = RECESSION_DATA.getContainerList();
-        for (XYListContainer container : containerList) {
+        List<XYAxesValues> containerList = RECESSION_DATA.getAxesValuesList();
+        for (XYAxesValues container : containerList) {
             chart.addSeries(container.toString(),
                     container.getxValues(), container.getyValues())
                     .setXYSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Area)
