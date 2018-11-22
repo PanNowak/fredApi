@@ -8,7 +8,6 @@ import fred.network.FredConnection;
 
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.plaf.metal.MetalLookAndFeel;
@@ -18,11 +17,9 @@ import java.awt.event.ItemListener;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class ChoiceFrame extends JFrame {
@@ -50,34 +47,49 @@ public class ChoiceFrame extends JFrame {
     private JProgressBar progressBar;
 
     public ChoiceFrame() {
-        seriesMap = new LinkedHashMap<SeriesEnum, Series>() {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry eldest) {
-                return size() > MAX_MAP_SIZE;
-            }
-        };
-        File desktop = FileSystemView.getFileSystemView().getHomeDirectory();
-        fileChooser = new JFileChooser(desktop);
-        fileChooser.setFileFilter(new FileNameExtensionFilter(
-                "Excel files", ".xlsx"));
+        setMetalLookAndFeel();
 
-        try {
-            UIManager.setLookAndFeel(new MetalLookAndFeel());
-            SwingUtilities.updateComponentTreeUI(this);
-        } catch (Exception e) { e.printStackTrace(); }
+        seriesMap = getLimitedSizeMap();
+        fileChooser = getExcelFileChooser();
 
         setLayout(new GridBagLayout());
-
-        add(createSeriesPanel(), new GBC(0, 0).setInsets(2).setFill(GBC.BOTH));
-        add(createDatePanel(), new GBC(0, 1).setInsets(2).setFill(GBC.BOTH));
+        add(getSeriesPanel(), new GBC(0, 0).setInsets(2).setFill(GBC.BOTH));
+        add(getDatePanel(), new GBC(0, 1).setInsets(2).setFill(GBC.BOTH));
         add(createButtonPanel(), new GBC(0, 2).setInsets(2).setFill(GBC.BOTH));
 
         pack();
     }
 
-    private JPanel createSeriesPanel() {
-        seriesCombo = createSeriesCombo();
-        seriesButton = createSeriesButton();
+    private void setMetalLookAndFeel() {
+        try {
+            UIManager.setLookAndFeel(new MetalLookAndFeel());
+            SwingUtilities.updateComponentTreeUI(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Map<SeriesEnum, Series> getLimitedSizeMap() {
+        return new LinkedHashMap<SeriesEnum, Series>() {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry eldest) {
+                return size() > MAX_MAP_SIZE;
+            }
+        };
+    }
+
+    private JFileChooser getExcelFileChooser() {
+        File desktopDir = FileSystemView.getFileSystemView().getHomeDirectory();
+        JFileChooser fileChooser = new JFileChooser(desktopDir);
+        fileChooser.setFileFilter(new FileNameExtensionFilter(
+                "Excel files", ".xlsx"));
+
+        return fileChooser;
+    }
+
+    private JPanel getSeriesPanel() {
+        seriesCombo = getSeriesCombo();
+        seriesButton = getSeriesButton();
 
         seriesPanel = new JPanel();
         seriesPanel.add(seriesCombo);
@@ -90,7 +102,7 @@ public class ChoiceFrame extends JFrame {
         return seriesPanel;
     }
 
-    private JComboBox<SeriesEnum> createSeriesCombo() {
+    private JComboBox<SeriesEnum> getSeriesCombo() {
         JComboBox<SeriesEnum> seriesCombo = new JComboBox<>(SeriesEnum.values());
         seriesCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -104,7 +116,6 @@ public class ChoiceFrame extends JFrame {
             }
         });
 
-        //Adding listeners to SeriesEnums combobox
         seriesCombo.addActionListener(event -> {
             if (chartFrame != null) {
                 chartFrame.setVisible(false);
@@ -147,11 +158,10 @@ public class ChoiceFrame extends JFrame {
         return seriesCombo;
     }
 
-    private JButton createSeriesButton() {
+    private JButton getSeriesButton() {
         JButton seriesButton = new JButton("Download series");
         seriesButton.setEnabled(false);
-        Dimension size = seriesButton.getPreferredSize();
-        seriesButton.setPreferredSize(size);
+        Dimension seriesButtonSize = setPreferredSize(seriesButton);
 
         seriesButton.addActionListener(event -> {
             seriesButton.setEnabled(false);
@@ -159,7 +169,7 @@ public class ChoiceFrame extends JFrame {
 
             progressBar = new JProgressBar();
             progressBar.setIndeterminate(true);
-            progressBar.setPreferredSize(size);
+            progressBar.setPreferredSize(seriesButtonSize);
             seriesPanel.add(progressBar);
             validate();
 
@@ -174,22 +184,23 @@ public class ChoiceFrame extends JFrame {
         return seriesButton;
     }
 
-    private JPanel createDatePanel() {
+    private Dimension setPreferredSize(JButton button) {
+        Dimension currentPreferredSize = button.getPreferredSize();
+        button.setPreferredSize(currentPreferredSize);
+
+        return currentPreferredSize;
+    }
+
+    private JPanel getDatePanel() {
         JPanel datePanel = new JPanel(new GridBagLayout());
 
-        JLabel startingDateLabel = new JLabel("Start Date: ");
-        startingDateLabel.setHorizontalAlignment(JLabel.RIGHT);
-        datePanel.add(startingDateLabel, getDateGBC(0));
-
         startingDateCombo = createDateCombo();
-        datePanel.add(startingDateCombo, getDateGBC(1));
-
-        JLabel endingDateLabel = new JLabel("End Date: ");
-        endingDateLabel.setHorizontalAlignment(JLabel.RIGHT);
-        datePanel.add(endingDateLabel, getDateGBC(2));
+        addLabelAndComboToPanel(datePanel, "Start Date: ",
+                startingDateCombo, 0);
 
         endingDateCombo = createDateCombo();
-        datePanel.add(endingDateCombo, getDateGBC(3));
+        addLabelAndComboToPanel(datePanel, "End Date: ",
+                endingDateCombo, 1);
 
         Border etchedBorder = BorderFactory.createEtchedBorder();
         Border dateBorder = BorderFactory.createTitledBorder(etchedBorder,
@@ -197,6 +208,15 @@ public class ChoiceFrame extends JFrame {
         datePanel.setBorder(dateBorder);
 
         return datePanel;
+    }
+
+    private void addLabelAndComboToPanel(JPanel datePanel, String labelText,
+                                         JComboBox<LocalDate> dateCombo, int gridx) {
+        JLabel dateLabel = new JLabel(labelText);
+        dateLabel.setHorizontalAlignment(JLabel.RIGHT);
+        datePanel.add(dateLabel, getDateGBC(2 * gridx));
+
+        datePanel.add(dateCombo, getDateGBC(2 * gridx + 1));
     }
 
     private JComboBox<LocalDate> createDateCombo() {

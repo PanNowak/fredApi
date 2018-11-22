@@ -99,10 +99,10 @@ public class ChartFrame extends JFrame {
         Color g = Color.LIGHT_GRAY;
         Color gray = new Color(g.getRed(), g.getGreen(), g.getBlue(), 100);
 
-        List<XYAxesValues> containerList = RECESSION_DATA.getAxesValuesList();
-        for (XYAxesValues container : containerList) {
-            chart.addSeries(container.toString(),
-                    container.getxValues(), container.getyValues())
+        List<XYAxesValues> axesValuesList = RECESSION_DATA.getAxesValuesList();
+        for (XYAxesValues axesValues : axesValuesList) {
+            chart.addSeries(axesValues.toString(),
+                    axesValues.getxValues(), axesValues.getyValues())
                     .setXYSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Area)
                     .setMarker(SeriesMarkers.NONE).setFillColor(gray);
         }
