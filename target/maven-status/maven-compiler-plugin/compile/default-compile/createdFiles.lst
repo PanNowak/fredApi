@@ -12,8 +12,11 @@ fred\frames\ChoiceFrame$1.class
 fred\network\LocalDateAdapter.class
 fred\data\Header.class
 fred\data\RecessionData.class
+fred\launcher\Main.class
 fred\frames\TableFrame$1.class
 fred\gbc\GBC.class
-fred\data\XYListContainer.class
+excel\ExcelWriter.class
+fred\data\XYAxesValues.class
 fred\frames\ChoiceFrame$3.class
 fred\frames\TableFrame.class
+fred\function\TriFunction.class
