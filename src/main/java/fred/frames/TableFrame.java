@@ -1,18 +1,22 @@
 package fred.frames;
 
 import fred.data.Observation;
+import fred.data.Series;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
+import java.time.LocalDate;
 import java.util.List;
 
 public class TableFrame extends JFrame {
+    private Series series;
     private List<Observation> observationList;
     private JTable table;
 
-    public TableFrame(List<Observation> observationList) {
-        this.observationList = observationList;
+    public TableFrame(Series series, LocalDate startDate, LocalDate endDate) {
+        this.series = series;
+        observationList = getUpdatedObservationList(startDate, endDate);
 
         table = new JTable(new FedTableModel());
         table.setCellSelectionEnabled(true);
@@ -23,8 +27,12 @@ public class TableFrame extends JFrame {
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    public void updateObservationList(List<Observation> observationList) {
-        this.observationList = observationList;
+    private List<Observation> getUpdatedObservationList(LocalDate startDate, LocalDate endDate) {
+        return series.getObservationList(startDate, endDate);
+    }
+
+    public void updateTable(LocalDate startDate, LocalDate endDate) {
+        observationList = getUpdatedObservationList(startDate, endDate);
         table.updateUI();
     }
 

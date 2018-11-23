@@ -3,6 +3,7 @@ package fred.frames;
 import excel.ExcelWriter;
 import fred.enumeration.SeriesEnum;
 import fred.data.Series;
+import fred.function.TriFunction;
 import fred.gbc.GBC;
 import fred.network.FredConnection;
 
@@ -42,7 +43,6 @@ public class ChoiceFrame extends JFrame {
     private JFileChooser fileChooser;
     private ExcelWriter excelWriter;
 
-    private FredWorker worker;
     private JPanel seriesPanel;
     private JProgressBar progressBar;
 
@@ -53,9 +53,9 @@ public class ChoiceFrame extends JFrame {
         fileChooser = getExcelFileChooser();
 
         setLayout(new GridBagLayout());
-        add(getSeriesPanel(), new GBC(0, 0).setInsets(2).setFill(GBC.BOTH));
-        add(getDatePanel(), new GBC(0, 1).setInsets(2).setFill(GBC.BOTH));
-        add(createButtonPanel(), new GBC(0, 2).setInsets(2).setFill(GBC.BOTH));
+        add(getSeriesPanel(), getFrameGBC(0));
+        add(getDatePanel(), getFrameGBC(1));
+        add(getButtonPanel(), getFrameGBC(2));
 
         pack();
     }
@@ -87,6 +87,10 @@ public class ChoiceFrame extends JFrame {
         return fileChooser;
     }
 
+    private GridBagConstraints getFrameGBC(int gridy) {
+        return new GBC(0, gridy).setInsets(2).setFill(GBC.BOTH);
+    }
+
     private JPanel getSeriesPanel() {
         seriesCombo = getSeriesCombo();
         seriesButton = getSeriesButton();
@@ -96,7 +100,8 @@ public class ChoiceFrame extends JFrame {
         seriesPanel.add(seriesButton);
 
         Border etched = BorderFactory.createEtchedBorder();
-        Border seriesBorder = BorderFactory.createTitledBorder(etched, "Data series selection");
+        Border seriesBorder = BorderFactory.createTitledBorder(
+                etched, "Data series selection");
         seriesPanel.setBorder(seriesBorder);
 
         return seriesPanel;
@@ -117,45 +122,51 @@ public class ChoiceFrame extends JFrame {
         });
 
         seriesCombo.addActionListener(event -> {
-            if (chartFrame != null) {
-                chartFrame.setVisible(false);
-                chartFrame = null;
-            }
-            if (tableFrame != null) {
-                tableFrame.setVisible(false);
-                tableFrame = null;
-            }
-            excelWriter = null;
-
-            startingDateCombo.removeAllItems();
-            endingDateCombo.removeAllItems();
-
-            SeriesEnum se = getSelectedItem(seriesCombo);
-
-            if (seriesMap.containsKey(se)) {
-                seriesButton.setEnabled(false);
-                seriesButton.setText("Downloaded");
-
-                excelButton.setEnabled(true);
-                chartButton.setEnabled(true);
-                tableButton.setEnabled(true);
+            clearAllComponents();
+            if (isDataDownloaded()) {
+                setDataControlButtonsEnabled(true, "Downloaded");
 
                 prepareDateCombo(startingDateCombo, false);
                 prepareDateCombo(endingDateCombo, true);
             } else {
-                seriesButton.setEnabled(
-                        this.seriesCombo.getSelectedIndex() != 0);
-                seriesButton.setText("Download series");
-                startingDateCombo.setEnabled(false);
-                endingDateCombo.setEnabled(false);
-
-                excelButton.setEnabled(false);
-                chartButton.setEnabled(false);
-                tableButton.setEnabled(false);
+                setDataControlButtonsEnabled(false, "Download");
             }
         });
 
         return seriesCombo;
+    }
+
+    private void clearAllComponents() {
+        if (chartFrame != null) {
+            chartFrame.setVisible(false);
+            chartFrame = null;
+        }
+        if (tableFrame != null) {
+            tableFrame.setVisible(false);
+            tableFrame = null;
+        }
+        excelWriter = null;
+
+        startingDateCombo.removeAllItems();
+        endingDateCombo.removeAllItems();
+    }
+
+    private boolean isDataDownloaded() {
+        SeriesEnum se = getSelectedItem(seriesCombo);
+        return seriesMap.containsKey(se);
+    }
+
+    private void setDataControlButtonsEnabled(boolean isEnabled, String seriesButtonText) {
+        seriesButton.setEnabled(!isEnabled &&
+                seriesCombo.getSelectedIndex() != 0);
+        seriesButton.setText(seriesButtonText);
+
+        startingDateCombo.setEnabled(isEnabled);
+        endingDateCombo.setEnabled(isEnabled);
+
+        excelButton.setEnabled(isEnabled);
+        chartButton.setEnabled(isEnabled);
+        tableButton.setEnabled(isEnabled);
     }
 
     private JButton getSeriesButton() {
@@ -164,24 +175,24 @@ public class ChoiceFrame extends JFrame {
         Dimension seriesButtonSize = setPreferredSize(seriesButton);
 
         seriesButton.addActionListener(event -> {
-            seriesButton.setEnabled(false);
-            seriesPanel.remove(seriesButton);
-
-            progressBar = new JProgressBar();
-            progressBar.setIndeterminate(true);
-            progressBar.setPreferredSize(seriesButtonSize);
-            seriesPanel.add(progressBar);
-            validate();
-
+            replaceSeriesButtonWithProgressBar(seriesButtonSize);
             seriesCombo.setEnabled(false);
 
-            SeriesEnum se = getSelectedItem(seriesCombo);
-            worker = new FredWorker(se);
-            worker.execute();
-
+            new FredWorker().execute();
         });
 
         return seriesButton;
+    }
+
+    private void replaceSeriesButtonWithProgressBar(Dimension seriesButtonSize) {
+        seriesButton.setEnabled(false);
+        seriesPanel.remove(seriesButton);
+
+        progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        progressBar.setPreferredSize(seriesButtonSize);
+        seriesPanel.add(progressBar);
+        validate();
     }
 
     private Dimension setPreferredSize(JButton button) {
@@ -194,13 +205,10 @@ public class ChoiceFrame extends JFrame {
     private JPanel getDatePanel() {
         JPanel datePanel = new JPanel(new GridBagLayout());
 
-        startingDateCombo = createDateCombo();
         addLabelAndComboToPanel(datePanel, "Start Date: ",
-                startingDateCombo, 0);
-
-        endingDateCombo = createDateCombo();
+                startingDateCombo = getDateCombo(), 0);
         addLabelAndComboToPanel(datePanel, "End Date: ",
-                endingDateCombo, 1);
+                endingDateCombo = getDateCombo(), 1);
 
         Border etchedBorder = BorderFactory.createEtchedBorder();
         Border dateBorder = BorderFactory.createTitledBorder(etchedBorder,
@@ -219,13 +227,10 @@ public class ChoiceFrame extends JFrame {
         datePanel.add(dateCombo, getDateGBC(2 * gridx + 1));
     }
 
-    private JComboBox<LocalDate> createDateCombo() {
+    private JComboBox<LocalDate> getDateCombo() {
         JComboBox<LocalDate> dateCombo = new JComboBox<>();
-
-        dateCombo.addItem(LocalDate.now());
-        dateCombo.setPreferredSize(dateCombo.getPreferredSize());
-        dateCombo.removeAllItems();
         dateCombo.setEnabled(false);
+        setPreferredSize(dateCombo);
 
         dateCombo.addItemListener(new ItemListener() {
             private LocalDate deselected;
@@ -237,83 +242,111 @@ public class ChoiceFrame extends JFrame {
                     return;
                 }
 
-                if (!isDateChoiceValid(startingDateCombo, endingDateCombo)) {
+                if (!isDateChoiceValid()) {
                     dateCombo.removeItemListener(this);
                     dateCombo.setSelectedItem(deselected);
                     dateCombo.addItemListener(this);
                     return;
                 }
 
-                Series series = seriesMap.get(getSelectedItem(seriesCombo));
-                LocalDate start = getSelectedItem(startingDateCombo);
-                LocalDate end = getSelectedItem(endingDateCombo);
-
-                if (chartFrame != null)
-                    chartFrame.updateAxes(start, end);
-                if (tableFrame != null)
-                    tableFrame.updateObservationList(series.getObservationList(start, end));
+                updateDataFrames();
             }
         });
 
         return dateCombo;
     }
 
-    private JPanel createButtonPanel() {
-        JPanel buttonPanel = new JPanel(new GridBagLayout());
+    private void setPreferredSize(JComboBox<? super LocalDate> comboBox) {
+        comboBox.addItem(LocalDate.now());
+        Dimension currentPreferredSize = comboBox.getPreferredSize();
+        comboBox.setPreferredSize(currentPreferredSize);
+        comboBox.removeAllItems();
+    }
 
-        excelButton = new JButton("Create report");
+    private void updateDataFrames() {
+        LocalDate start = getSelectedItem(startingDateCombo);
+        LocalDate end = getSelectedItem(endingDateCombo);
+
+        if (chartFrame != null)
+            chartFrame.updateAxes(start, end);
+        if (tableFrame != null)
+            tableFrame.updateTable(start, end);
+    }
+
+    private JPanel getButtonPanel() {
+        JPanel buttonPanel = new JPanel(new GridBagLayout());
+        buttonPanel.add(excelButton = getExcelButton(), getButtonPanelGBC(0));
+        buttonPanel.add(tableButton = getTableButton(), getButtonPanelGBC(1));
+        buttonPanel.add(chartButton = getChartButton(), getButtonPanelGBC(2));
+
+        return buttonPanel;
+    }
+
+    private JButton getExcelButton() {
+        JButton excelButton = new JButton("Create report");
         excelButton.setEnabled(false);
         excelButton.addActionListener(event -> {
             int state = fileChooser.showSaveDialog(this);
-            if (state == JFileChooser.APPROVE_OPTION)
+            if (state == JFileChooser.APPROVE_OPTION) {
+                excelButton.setEnabled(false);
                 createExcelReport(fileChooser.getSelectedFile());
+            }
         });
 
-        buttonPanel.add(excelButton, new GBC(0, 0).setInsets(2)
-                .setWeight(100, 0).setFill(GBC.BOTH));
+        return excelButton;
+    }
 
-        tableButton = new JButton("Show table");
+    private JButton getTableButton() {
+        JButton tableButton = new JButton("Show table");
         tableButton.setEnabled(false);
         tableButton.addActionListener(event -> {
-            if (tableFrame == null) tableFrame = createTableFrame();
+            if (tableFrame == null) tableFrame = getTableFrame();
 
             if (!tableFrame.isVisible()) tableFrame.setVisible(true);
             else tableFrame.setVisible(false);
         });
 
-        buttonPanel.add(tableButton, new GBC(1, 0).setInsets(2)
-                .setWeight(100, 0).setFill(GBC.BOTH));
+        return tableButton;
+    }
 
-        chartButton = new JButton("Show chart");
+    private JButton getChartButton() {
+        JButton chartButton = new JButton("Show chart");
         chartButton.setEnabled(false);
         chartButton.addActionListener(event -> {
-            if (chartFrame == null) chartFrame = createChartFrame();
+            if (chartFrame == null) chartFrame = getChartFrame();
 
             if (!chartFrame.isVisible()) chartFrame.setVisible(true);
             else chartFrame.setVisible(false);
         });
 
-        buttonPanel.add(chartButton, new GBC(2, 0).setInsets(2)
-                .setWeight(100, 0).setFill(GBC.BOTH));
+        return chartButton;
+    }
 
-        return buttonPanel;
+    private GridBagConstraints getButtonPanelGBC(int gridx) {
+        return new GBC(gridx, 0).setInsets(2)
+                .setWeight(100, 0).setFill(GBC.BOTH);
     }
 
     private void createExcelReport(File file) {
-        Series series = seriesMap.get(getSelectedItem(seriesCombo));
+        prepareExcelWriter();
+        getExcelWritingThread(file).start();
+    }
+
+    private void prepareExcelWriter() {
         LocalDate start = getSelectedItem(startingDateCombo);
         LocalDate end = getSelectedItem(endingDateCombo);
 
         if (excelWriter == null) {
+            Series series = seriesMap.get(getSelectedItem(seriesCombo));
             excelWriter = new ExcelWriter(series, start, end);
         } else {
             excelWriter.setStartDate(start);
             excelWriter.setEndDate(end);
         }
+    }
 
-        excelButton.setEnabled(false);
-
-        new Thread(() -> {
+    private Thread getExcelWritingThread(File file) {
+        return new Thread(() -> {
             try {
                 excelWriter.writeToExcel(file);
             } catch (IOException e) {
@@ -324,43 +357,44 @@ public class ChoiceFrame extends JFrame {
             } finally {
                 EventQueue.invokeLater(() -> excelButton.setEnabled(true));
             }
-        }).start();
+        });
     }
 
-    private ChartFrame createChartFrame() {
-        Series series = seriesMap.get(getSelectedItem(seriesCombo));
-        LocalDate start = getSelectedItem(startingDateCombo);
-        LocalDate end = getSelectedItem(endingDateCombo);
-
-        ChartFrame chartFrame = new ChartFrame(series, start, end);
-
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
-        int taskBarSize = scnMax.bottom;
-        int macBar = scnMax.top;
-
-        chartFrame.setBounds(getWidth(), 0, screenSize.width - getWidth(),
-                screenSize.height - taskBarSize - macBar);
+    private ChartFrame getChartFrame() {
+        ChartFrame chartFrame = getDataFrame(ChartFrame::new);
+        setBounds(chartFrame, false);
 
         return chartFrame;
     }
 
-    private TableFrame createTableFrame() {
+    private TableFrame getTableFrame() {
+        TableFrame tableFrame = getDataFrame(TableFrame::new);
+        setBounds(tableFrame, true);
+
+        return tableFrame;
+    }
+
+    private <R extends JFrame> R getDataFrame(
+            TriFunction<Series, LocalDate, LocalDate, ? extends R> constructor) {
         Series series = seriesMap.get(getSelectedItem(seriesCombo));
         LocalDate start = getSelectedItem(startingDateCombo);
         LocalDate end = getSelectedItem(endingDateCombo);
 
-        TableFrame tableFrame = new TableFrame(series.getObservationList(start, end));
+        return constructor.apply(series, start, end);
+    }
 
+    private void setBounds(JFrame dataFrame, boolean isBelowMainFrame) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
         int taskBarSize = scnMax.bottom;
         int macBar = scnMax.top;
 
-        tableFrame.setBounds(0, getHeight() + macBar, getWidth(),
-                screenSize.height - getHeight() - taskBarSize - macBar);
-
-        return tableFrame;
+        if (!isBelowMainFrame)
+            dataFrame.setBounds(getWidth(), 0, screenSize.width - getWidth(),
+                screenSize.height - taskBarSize - macBar);
+        else
+            dataFrame.setBounds(0, getHeight() + macBar, getWidth(),
+                    screenSize.height - getHeight() - taskBarSize - macBar);
     }
 
     private void prepareDateCombo(JComboBox<LocalDate> dateCombo, boolean isEndCombo) {
@@ -376,16 +410,15 @@ public class ChoiceFrame extends JFrame {
         dateCombo.setEnabled(true);
     }
 
-    private boolean isDateChoiceValid(JComboBox<LocalDate> beforeCombo,
-                                      JComboBox<LocalDate> afterCombo) {
-        LocalDate beforeDate = getSelectedItem(beforeCombo);
-        LocalDate afterDate = getSelectedItem(afterCombo);
+    private boolean isDateChoiceValid() {
+        LocalDate beforeDate = getSelectedItem(startingDateCombo);
+        LocalDate afterDate = getSelectedItem(endingDateCombo);
 
         if (beforeDate == null || afterDate == null) return true;
 
         if (beforeDate.compareTo(afterDate) > 0) {
-            beforeCombo.hidePopup();
-            afterCombo.hidePopup();
+            startingDateCombo.hidePopup();
+            endingDateCombo.hidePopup();
 
             JOptionPane.showMessageDialog(this,
                     "Starting date may not be after ending date", "",
@@ -409,8 +442,8 @@ public class ChoiceFrame extends JFrame {
     private class FredWorker extends SwingWorker<Series, Void> {
         private SeriesEnum se;
 
-        FredWorker(SeriesEnum se) {
-            this.se = se;
+        FredWorker() {
+            se = getSelectedItem(seriesCombo);
         }
 
         @Override
@@ -422,16 +455,10 @@ public class ChoiceFrame extends JFrame {
         protected void done() {
             try {
                 seriesMap.put(se, get());
+                setDataControlButtonsEnabled(true, "Downloaded");
 
                 prepareDateCombo(startingDateCombo, false);
                 prepareDateCombo(endingDateCombo, true);
-
-                seriesButton.setText("Downloaded");
-
-                excelButton.setEnabled(true);
-
-                chartButton.setEnabled(true);
-                tableButton.setEnabled(true);
             } catch (ExecutionException | InterruptedException e) {
                 JOptionPane.showMessageDialog(ChoiceFrame.this,
                         "Internal error", "", JOptionPane.ERROR_MESSAGE);
@@ -446,14 +473,5 @@ public class ChoiceFrame extends JFrame {
                 repaint();
             }
         }
-    }
-
-    public static void main(String[] args) {
-        EventQueue.invokeLater(() -> {
-            JFrame frame = new ChoiceFrame();
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setResizable(false);
-            frame.setVisible(true);
-        });
     }
 }
