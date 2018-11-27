@@ -7,9 +7,9 @@ import java.util.Objects;
  * Class containing data necessary to create single
  * <i>gray strip</i> that indicates recession on an area chart.
  */
-public class XYAxesValues {
-    private List<Double> xValues;
-    private List<Double> yValues;
+public final class XYAxesValues {
+    private final List<Double> xValues;
+    private final List<Double> yValues;
 
     /**
      * Creates new {@code XYAxesValues} object.

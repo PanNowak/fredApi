@@ -9,9 +9,9 @@ import java.util.Objects;
 /**
  * Class representing data series.
  */
-public class Series {
-    private Header header;
-    private List<Observation> observationList;
+public final class Series {
+    private final Header header;
+    private final List<Observation> observationList;
 
     /**
      * Creates new {@code Series} object.
@@ -47,11 +47,16 @@ public class Series {
      * @return list of {@code Observation} objects
      */
     public List<Observation> getObservationList(LocalDate firstDate, LocalDate lastDate) {
+        if (firstDate.compareTo(lastDate) > 0)
+            throw new IllegalArgumentException(
+                    "First date cannot be after last date");
+
         List<Observation> observationsBetween = new ArrayList<>();
         for (Observation observation : observationList) {
             LocalDate dateOfObservation = observation.getDate();
 
-            if (dateOfObservation.compareTo(firstDate) >= 0)
+            if (dateOfObservation.compareTo(firstDate) >= 0 &&
+                    dateOfObservation.compareTo(lastDate) <= 0)
                 observationsBetween.add(observation);
 
             if (dateOfObservation.compareTo(lastDate) >= 0)

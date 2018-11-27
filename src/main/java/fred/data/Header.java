@@ -6,13 +6,13 @@ import java.util.Objects;
 /**
  * Class representing header of the series.
  */
-public class Header {
-    private String id;
-    private String title;
-    private LocalDate observation_start;
-    private LocalDate observation_end;
-    private String frequency;
-    private String units;
+public final class Header {
+    private final String id;
+    private final String title;
+    private final LocalDate observation_start;
+    private final LocalDate observation_end;
+    private final String frequency;
+    private final String units;
 
     /**
      * Creates new {@code Header} object.

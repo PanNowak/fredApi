@@ -9,7 +9,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 /**
  * Class representing one observation.
  */
-public class Observation {
+public final class Observation {
     /**
      * Static starting point used to count number of days between
      * it and date of this observation.
@@ -17,9 +17,9 @@ public class Observation {
     private static final LocalDate FIRST_OBSERVATION_DATE =
             LocalDate.of(1500, 1, 1);
 
-    private LocalDate date;
-    private BigDecimal value;
-    private long xMarker;
+    private final LocalDate date;
+    private final BigDecimal value;
+    private final long xMarker;
 
     /**
      * Creates new {@code Observation} object.
@@ -73,11 +73,12 @@ public class Observation {
         if (o == null || getClass() != o.getClass()) return false;
         Observation that = (Observation) o;
         return Objects.equals(value, that.value) &&
-                Objects.equals(date, that.date);
+                Objects.equals(date, that.date) &&
+                xMarker == that.xMarker;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(date, value);
+        return Objects.hash(date, value, xMarker);
     }
 }

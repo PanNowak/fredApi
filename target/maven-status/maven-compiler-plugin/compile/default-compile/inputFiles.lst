@@ -1,14 +1,14 @@
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\frames\TableFrame.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\data\RecessionData.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\frames\ChoiceFrame.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\enumeration\SeriesEnum.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\data\Series.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\launcher\Main.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\data\XYAxesValues.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\frames\ChartFrame.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\network\FredConnection.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\gbc\GBC.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\data\Header.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\data\Observation.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\fred\function\TriFunction.java
-C:\Users\mnowak3\IdeaProjects\FredApi\src\main\java\excel\ExcelWriter.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/excel/ExcelWriter.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/frames/TableFrame.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/data/XYAxesValues.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/enumeration/SeriesEnum.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/frames/ChartFrame.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/data/Observation.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/function/TriFunction.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/launcher/Main.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/data/Header.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/data/Series.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/network/FredConnection.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/data/RecessionData.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/frames/ChoiceFrame.java
+/Users/Mateusz/Documents/Udemy Workspace/fredApi/src/main/java/fred/gbc/GBC.java
